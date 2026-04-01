@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import heroImage from '../assets/hero.png'
 import getInTouchImage from '../assets/getintouch.jpg'
 import scotchImage from '../assets/Scotch.PNG'
@@ -204,6 +205,21 @@ function ContactPage() {
             ))}
           </div>
         </article>
+      </section>
+
+      <section className="border-y border-[#b79552]/30 bg-[#070505] py-12">
+        <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 px-6 md:flex-row md:items-center">
+          <p className="max-w-3xl text-xl leading-tight text-white md:text-3xl">
+            Speak with Dortons Whisky Partners today
+            <span className="mt-2 block text-lg italic text-slate-200 md:text-xl">and take your first step into whisky investing.</span>
+          </p>
+          <Link
+            to="/contact"
+            className="inline-block whitespace-nowrap rounded-sm bg-[#b79552] px-5 py-2.5 text-xs font-semibold text-black transition hover:bg-[#c7a964]"
+          >
+            Book a call with our team
+          </Link>
+        </div>
       </section>
 
     </main>

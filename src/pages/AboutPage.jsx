@@ -1,4 +1,3 @@
-import heroImage from '../assets/hero.png'
 import irishImage from '../assets/Irish.PNG'
 import investWhiskyImage from '../assets/invest whisky.PNG'
 import scotchImage from '../assets/Scotch.PNG'
@@ -93,16 +92,17 @@ function AboutPage() {
         </div>
       </section>
 
-      <section className="relative border-y border-[#b79552]/30">
-        <img src={heroImage} alt="About call to action" className="h-[260px] w-full object-cover opacity-40" />
-        <div className="absolute inset-0 bg-black/45"></div>
-        <div className="absolute inset-0 mx-auto flex max-w-6xl flex-col items-center justify-center px-6 text-center">
-          <p className="text-xs uppercase tracking-[0.25em] text-[#d8bc79]">Let&apos;s start your whisky investment journey</p>
-          <p className="mt-3 max-w-3xl text-2xl font-medium text-white">
-            Whether you are new to whisky investing or growing your portfolio, our team is ready to support every stage.
+      <section className="border-y border-[#b79552]/30 bg-[#070505] py-12">
+        <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 px-6 md:flex-row md:items-center">
+          <p className="max-w-3xl text-xl leading-tight text-white md:text-3xl">
+            Connect with Dortons Whisky Partners today
+            <span className="mt-2 block text-lg italic text-slate-200 md:text-xl">to begin your whisky investment journey.</span>
           </p>
-          <Link to="/contact" className="mt-5 inline-block rounded-sm bg-[#b79552] px-5 py-2 text-xs font-semibold uppercase tracking-wider text-black hover:bg-[#c7a964]">
-            Get in touch today
+          <Link
+            to="/contact"
+            className="inline-block whitespace-nowrap rounded-sm bg-[#b79552] px-5 py-2.5 text-xs font-semibold text-black transition hover:bg-[#c7a964]"
+          >
+            Book a call with our team
           </Link>
         </div>
       </section>
