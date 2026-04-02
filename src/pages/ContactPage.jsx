@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import heroImage from '../assets/hero.png'
 import getInTouchImage from '../assets/getintouch.jpg'
 import scotchImage from '../assets/Scotch.PNG'
+import { validateContactPayload } from '../utils/contactFormValidation.js'
 
 const faqs = [
   {
@@ -45,9 +45,72 @@ const faqs = [
 
 function ContactPage() {
   const [openFaqIndex, setOpenFaqIndex] = useState(0)
-  const handleEnquirySubmit = (event) => {
+  const [submitStatus, setSubmitStatus] = useState('idle') // 'idle' | 'sending' | 'sent'
+  const [submitError, setSubmitError] = useState(null)
+  const [fieldErrors, setFieldErrors] = useState({})
+
+  const inputClass = (field) =>
+    `w-full rounded border bg-[#0b0b0b] px-3 py-2 text-slate-200 ${
+      fieldErrors[field] ? 'border-red-500 focus:border-red-400 focus:ring-red-400/30' : 'border-[#6f5830]'
+    }`
+
+  const clearFieldError = (field) => {
+    setFieldErrors((prev) => {
+      if (!prev[field]) return prev
+      const next = { ...prev }
+      delete next[field]
+      return next
+    })
+  }
+
+  const handleEnquirySubmit = async (event) => {
     event.preventDefault()
-    window.location.href = 'mailto:info@dortonswhiskyclub.com?subject=Whisky%20Cask%20Enquiry'
+    const form = event.currentTarget
+    setSubmitError(null)
+    setFieldErrors({})
+
+    const formData = new FormData(form)
+    const payload = {
+      fullName: String(formData.get('fullName') || ''),
+      email: String(formData.get('email') || ''),
+      phone: String(formData.get('phone') || ''),
+      message: String(formData.get('message') || ''),
+    }
+
+    const validation = validateContactPayload(payload)
+    if (!validation.ok) {
+      setFieldErrors(validation.errors)
+      return
+    }
+
+    setSubmitStatus('sending')
+
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(validation.values),
+      })
+
+      const data = await res.json().catch(() => ({}))
+
+      if (!res.ok) {
+        if (data.errors && typeof data.errors === 'object') {
+          setFieldErrors(data.errors)
+        }
+        setSubmitStatus('idle')
+        setSubmitError(data.error || 'Sorry—your message could not be sent. Please try again.')
+        return
+      }
+
+      form.reset()
+      setSubmitStatus('sent')
+      setTimeout(() => setSubmitStatus('idle'), 4000)
+    } catch (err) {
+      console.error(err)
+      setSubmitStatus('idle')
+      setSubmitError('Sorry—your message could not be sent. Please try again.')
+    }
   }
 
   return (
@@ -70,7 +133,7 @@ function ContactPage() {
               </svg>
             </div>
             <p className="text-xs uppercase tracking-[0.2em] text-[#d8bc79]">Phone Number</p>
-            <p className="mt-2 text-sm">+44 1727 757 6144</p>
+            <p className="mt-2 text-sm">+44 7787 081 537</p>
           </article>
           <article className="text-slate-300">
             <div className="mx-auto mb-2 grid h-9 w-9 place-items-center rounded-full border border-[#b79552]/60 text-[#d8bc79]">
@@ -107,7 +170,7 @@ function ContactPage() {
                 <svg viewBox="0 0 24 24" className="h-4 w-4 text-[#9f8a5f]" fill="none" stroke="currentColor" strokeWidth="1.8">
                   <path d="M22 16.9v3a2 2 0 0 1-2.2 2A19.8 19.8 0 0 1 11.2 19a19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2 4.2 2 2 0 0 1 4 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.8 2.6a2 2 0 0 1-.5 2.1L8 9.7a16 16 0 0 0 6.3 6.3l1.3-1.3a2 2 0 0 1 2.1-.5c.8.4 1.7.7 2.6.8A2 2 0 0 1 22 16.9z" />
                 </svg>
-                +44 1727 757 6144
+                +44 7787 081 537
               </p>
               <p className="flex items-center gap-2">
                 <svg viewBox="0 0 24 24" className="h-4 w-4 text-[#9f8a5f]" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -128,12 +191,109 @@ function ContactPage() {
 
           <article className="border border-black/20 bg-[#111111] p-6">
             <h2 className="text-2xl font-semibold text-white">Fill Out Our Enquiry Form</h2>
-            <form className="mt-5 space-y-3" onSubmit={handleEnquirySubmit}>
-              <input className="w-full rounded border border-[#6f5830] bg-[#0b0b0b] px-3 py-2 text-slate-200" placeholder="Full name" required />
-              <input className="w-full rounded border border-[#6f5830] bg-[#0b0b0b] px-3 py-2 text-slate-200" placeholder="Email address" type="email" required />
-              <input className="w-full rounded border border-[#6f5830] bg-[#0b0b0b] px-3 py-2 text-slate-200" placeholder="Phone number" required />
-              <textarea className="h-24 w-full rounded border border-[#6f5830] bg-[#0b0b0b] px-3 py-2 text-slate-200" placeholder="Your message" required />
-              <button type="submit" className="w-full rounded bg-[#b79552] px-4 py-2 font-semibold text-black transition hover:bg-[#c7a964]">Submit</button>
+            <p className="mt-2 text-xs text-slate-500">All fields are required. We validate in your browser before sending.</p>
+            <form className="mt-5 space-y-3" onSubmit={handleEnquirySubmit} noValidate>
+              <div>
+                <label htmlFor="contact-fullName" className="mb-1 block text-sm text-slate-400">
+                  Full name <span className="text-red-400">*</span>
+                </label>
+                <input
+                  id="contact-fullName"
+                  name="fullName"
+                  autoComplete="name"
+                  maxLength={120}
+                  aria-required="true"
+                  aria-invalid={fieldErrors.fullName ? 'true' : 'false'}
+                  aria-describedby={fieldErrors.fullName ? 'err-fullName' : undefined}
+                  onChange={() => clearFieldError('fullName')}
+                  className={inputClass('fullName')}
+                  placeholder="Full name"
+                />
+                {fieldErrors.fullName && (
+                  <p id="err-fullName" className="mt-1 text-xs text-red-400">
+                    {fieldErrors.fullName}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label htmlFor="contact-email" className="mb-1 block text-sm text-slate-400">
+                  Email address <span className="text-red-400">*</span>
+                </label>
+                <input
+                  id="contact-email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  inputMode="email"
+                  maxLength={254}
+                  aria-required="true"
+                  aria-invalid={fieldErrors.email ? 'true' : 'false'}
+                  aria-describedby={fieldErrors.email ? 'err-email' : undefined}
+                  onChange={() => clearFieldError('email')}
+                  className={inputClass('email')}
+                  placeholder="Email address"
+                />
+                {fieldErrors.email && (
+                  <p id="err-email" className="mt-1 text-xs text-red-400">
+                    {fieldErrors.email}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label htmlFor="contact-phone" className="mb-1 block text-sm text-slate-400">
+                  Phone number <span className="text-red-400">*</span>
+                </label>
+                <input
+                  id="contact-phone"
+                  name="phone"
+                  type="tel"
+                  autoComplete="tel"
+                  inputMode="tel"
+                  aria-required="true"
+                  aria-invalid={fieldErrors.phone ? 'true' : 'false'}
+                  aria-describedby={fieldErrors.phone ? 'err-phone' : undefined}
+                  onChange={() => clearFieldError('phone')}
+                  className={inputClass('phone')}
+                  placeholder="e.g. +44 7787 081 537"
+                />
+                {fieldErrors.phone && (
+                  <p id="err-phone" className="mt-1 text-xs text-red-400">
+                    {fieldErrors.phone}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label htmlFor="contact-message" className="mb-1 block text-sm text-slate-400">
+                  Message <span className="text-red-400">*</span>
+                </label>
+                <textarea
+                  id="contact-message"
+                  name="message"
+                  rows={5}
+                  maxLength={5000}
+                  aria-required="true"
+                  aria-invalid={fieldErrors.message ? 'true' : 'false'}
+                  aria-describedby={fieldErrors.message ? 'err-message' : undefined}
+                  onChange={() => clearFieldError('message')}
+                  className={`${inputClass('message')} min-h-[6rem]`}
+                  placeholder="How can we help you?"
+                />
+                {fieldErrors.message && (
+                  <p id="err-message" className="mt-1 text-xs text-red-400">
+                    {fieldErrors.message}
+                  </p>
+                )}
+              </div>
+              <button
+                disabled={submitStatus === 'sending'}
+                type="submit"
+                className="w-full rounded bg-[#b79552] px-4 py-2 font-semibold text-black transition hover:bg-[#c7a964] disabled:opacity-70"
+              >
+                {submitStatus === 'sending' ? 'Sending...' : submitStatus === 'sent' ? 'Sent' : 'Submit'}
+              </button>
+
+              {submitError && <p className="text-sm text-red-300">{submitError}</p>}
+              {submitStatus === 'sent' && <p className="text-sm text-[#d8bc79]">Thanks! We'll get back to you shortly.</p>}
             </form>
           </article>
         </div>

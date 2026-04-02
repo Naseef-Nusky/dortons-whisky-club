@@ -79,7 +79,7 @@ function Layout() {
             <div>
               <h4 className="text-lg font-semibold text-white">Contact Us</h4>
               <div className="mt-3 space-y-1 text-sm text-slate-300">
-                <p>+44 1727 757 6144</p>
+                <p>+44 7787 081 537</p>
                 <p>info@dortonswhiskyclub.com</p>
                 <p>Trident House, 54-56 Victoria St, St Albans AL1 3HZ</p>
               </div>
