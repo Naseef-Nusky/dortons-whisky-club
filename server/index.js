@@ -1,15 +1,26 @@
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
-import dns from 'node:dns'
 import express from 'express'
 import dotenv from 'dotenv'
-import nodemailer from 'nodemailer'
-
-// Prefer IPv4 for any other lookups in the process.
-dns.setDefaultResultOrder('ipv4first')
+import sgMail from '@sendgrid/mail'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 dotenv.config({ path: join(__dirname, '.env') })
+
+/** Trim and strip wrapping quotes — fixes common .env paste mistakes. */
+function normalizeSendGridApiKey(raw) {
+  if (raw == null || typeof raw !== 'string') return ''
+  let s = raw.trim()
+  if (
+    (s.startsWith('"') && s.endsWith('"')) ||
+    (s.startsWith("'") && s.endsWith("'"))
+  ) {
+    s = s.slice(1, -1).trim()
+  }
+  return s
+}
+
+const sendGridApiKey = normalizeSendGridApiKey(process.env.SENDGRID_API_KEY)
 
 const app = express()
 app.use(express.json())
@@ -18,15 +29,20 @@ app.get('/health', (req, res) => {
   res.json({ ok: true })
 })
 
-// One-line diagnostics (no secrets) — check PM2 logs if /api/contact returns 500
 const logMailEnvOnce = () => {
-  const hasUser = Boolean(process.env.GMAIL_USER)
-  const hasPass = Boolean(process.env.GMAIL_APP_PASSWORD)
-  const hasTo = Boolean(process.env.MAIL_TO || process.env.GMAIL_USER)
-  console.log(`[mail] env: GMAIL_USER=${hasUser} GMAIL_APP_PASSWORD=${hasPass} MAIL_TO=${hasTo}`)
+  const hasKey = Boolean(sendGridApiKey)
+  const hasFrom = Boolean(process.env.SENDGRID_FROM_EMAIL?.trim())
+  const hasTo = Boolean(
+    process.env.MAIL_TO?.trim() || process.env.SENDGRID_FROM_EMAIL?.trim()
+  )
+  console.log(`[mail] env: SENDGRID_API_KEY=${hasKey} SENDGRID_FROM_EMAIL=${hasFrom} MAIL_TO=${hasTo}`)
 }
 
 logMailEnvOnce()
+
+if (sendGridApiKey) {
+  sgMail.setApiKey(sendGridApiKey)
+}
 
 const escapeHtml = (unsafe = '') =>
   String(unsafe)
@@ -36,53 +52,6 @@ const escapeHtml = (unsafe = '') =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;')
 
-async function createMailer() {
-  const user = process.env.GMAIL_USER
-  const pass = process.env.GMAIL_APP_PASSWORD
-
-  if (!user || !pass) {
-    return null
-  }
-
-  // Connect by IPv4 literal — avoids ENETUNREACH when Node/nodemailer still picks Gmail IPv6 (2a00:1450:...).
-  let smtpHost
-  try {
-    const { address } = await dns.promises.lookup('smtp.gmail.com', { family: 4 })
-    smtpHost = address
-    console.log('[mail] smtp.gmail.com resolved to IPv4:', smtpHost)
-  } catch (e) {
-    console.error('[mail] IPv4 DNS lookup for smtp.gmail.com failed:', e?.message || e)
-    return null
-  }
-
-  // Corporate proxies / SSL inspection can inject a cert Node does not trust → "self-signed certificate in chain".
-  // Dev-only escape hatch: set SMTP_TLS_INSECURE=true in server/.env (never in production).
-  const tlsInsecure = process.env.SMTP_TLS_INSECURE === 'true' || process.env.SMTP_TLS_INSECURE === '1'
-  if (tlsInsecure) {
-    console.warn('[mail] SMTP_TLS_INSECURE is enabled — TLS certificate verification is disabled (dev/troubleshooting only).')
-  }
-
-  return nodemailer.createTransport({
-    host: smtpHost,
-    port: 587,
-    secure: false,
-    requireTLS: true,
-    connectionTimeout: 60_000,
-    greetingTimeout: 30_000,
-    socketTimeout: 60_000,
-    auth: {
-      user,
-      pass,
-    },
-    tls: {
-      // Required when connecting by IP — cert is issued for smtp.gmail.com
-      servername: 'smtp.gmail.com',
-      minVersion: 'TLSv1.2',
-      ...(tlsInsecure ? { rejectUnauthorized: false } : {}),
-    },
-  })
-}
-
 app.post('/api/contact', async (req, res) => {
   try {
     const { fullName, email, phone, message } = req.body || {}
@@ -91,12 +60,12 @@ app.post('/api/contact', async (req, res) => {
     const ph = String(phone ?? '').trim()
     const msg = String(message ?? '').trim()
 
-    const mailTo = process.env.MAIL_TO || process.env.GMAIL_USER
-    const transporter = await createMailer()
+    const fromEmail = process.env.SENDGRID_FROM_EMAIL?.trim()
+    const mailTo = process.env.MAIL_TO?.trim() || fromEmail
 
-    if (!transporter || !mailTo) {
-      console.error('[mail] missing GMAIL_USER, GMAIL_APP_PASSWORD, or MAIL_TO in server/.env')
-      return res.status(500).json({ ok: false, error: 'Gmail SMTP is not configured on the server.' })
+    if (!sendGridApiKey || !fromEmail || !mailTo) {
+      console.error('[mail] missing SENDGRID_API_KEY, SENDGRID_FROM_EMAIL, or MAIL_TO in server/.env')
+      return res.status(500).json({ ok: false, error: 'Email is not configured on the server.' })
     }
 
     const subject = `Whisky Cask Enquiry - ${fn}`
@@ -126,20 +95,34 @@ app.post('/api/contact', async (req, res) => {
       <p><strong>Message:</strong><br/>${safeMessage}</p>
     `
 
-    await transporter.sendMail({
-      from: `"Dortons Whisky Club" <${process.env.GMAIL_USER}>`,
+    const msgPayload = {
       to: mailTo,
-      ...(em ? { replyTo: em } : {}),
+      from: {
+        email: fromEmail,
+        name: 'Dortons Whisky Club',
+      },
       subject,
       text: plainText,
       html,
-    })
+    }
+    if (em) {
+      msgPayload.replyTo = { email: em }
+    }
+
+    await sgMail.send(msgPayload)
 
     return res.json({ ok: true })
   } catch (err) {
-    const code = err?.code || err?.responseCode
+    const status = err?.response?.statusCode
+    const body = err?.response?.body
+    const code = err?.code || status
     const msg = err?.message || String(err)
-    console.error('[mail] sendMail failed:', code, msg)
+    console.error('[mail] send failed:', code, body || msg)
+    if (status === 401) {
+      console.error(
+        '[mail] SendGrid rejected the API key (401). Create a new key at https://app.sendgrid.com/settings/api_keys with "Mail Send" enabled, paste it as SENDGRID_API_KEY in server/.env, and restart the server.'
+      )
+    }
     return res.status(503).json({ ok: false, error: 'Failed to send email.' })
   }
 })
