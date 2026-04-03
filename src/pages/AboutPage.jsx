@@ -80,7 +80,7 @@ function AboutPage() {
             <p className="text-xs uppercase tracking-[0.2em] text-[#9f8a5f]">Global Investment</p>
             <h3 className="mt-2 text-3xl font-semibold text-[#171111]">Why whisky? Why now?</h3>
             <p className="mt-3 text-sm leading-7 text-slate-700">
-              Whisky casks offer physical asset ownership, increasing scarcity, and a track record of strong long-term demand. As the spirit matures, casks typically become rarer and more desirable.
+              Whisky casks offer physical asset ownership, increasing rarity, and a track record of strong long-term demand. As the spirit matures, casks typically become rarer and more desirable.
             </p>
             <p className="mt-3 text-sm leading-7 text-slate-700">
               For investors seeking alternatives to traditional markets, cask ownership can be a resilient, asset-backed way to diversify a portfolio.
