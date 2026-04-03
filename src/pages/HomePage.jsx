@@ -121,7 +121,7 @@ function HomePage() {
               Our approach combines proven market performance, careful cask selection, and investor-first guidance so you can build a stronger portfolio with confidence.
             </p>
             <p className="mt-3 text-slate-700">
-              As whisky matures, rarity increases and quality deepens, creating an attractive long-term dynamic for asset growth.
+              As whisky ages, it becomes rarer and more refined, enhancing its appeal as a long-term investment asset.
             </p>
           </article>
           <div className="space-y-4">
