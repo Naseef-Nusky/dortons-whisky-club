@@ -22,6 +22,11 @@ function normalizeSendGridApiKey(raw) {
 
 const sendGridApiKey = normalizeSendGridApiKey(process.env.SENDGRID_API_KEY)
 
+/** Real SendGrid keys start with `SG.` and are ~69 chars; placeholders like `true` or `your_key` fail with 401. */
+function sendGridKeyLooksValid(key) {
+  return typeof key === 'string' && key.startsWith('SG.') && key.length >= 40
+}
+
 const app = express()
 app.use(express.json())
 
@@ -31,16 +36,24 @@ app.get('/health', (req, res) => {
 
 const logMailEnvOnce = () => {
   const hasKey = Boolean(sendGridApiKey)
+  const keyOk = sendGridKeyLooksValid(sendGridApiKey)
   const hasFrom = Boolean(process.env.SENDGRID_FROM_EMAIL?.trim())
   const hasTo = Boolean(
     process.env.MAIL_TO?.trim() || process.env.SENDGRID_FROM_EMAIL?.trim()
   )
-  console.log(`[mail] env: SENDGRID_API_KEY=${hasKey} SENDGRID_FROM_EMAIL=${hasFrom} MAIL_TO=${hasTo}`)
+  console.log(
+    `[mail] env: SENDGRID_API_KEY=${hasKey} key_format_ok=${keyOk} SENDGRID_FROM_EMAIL=${hasFrom} MAIL_TO=${hasTo}`
+  )
+  if (hasKey && !keyOk) {
+    console.error(
+      '[mail] SENDGRID_API_KEY must be the full secret from SendGrid (starts with SG., ~69 chars). It cannot be "true", a placeholder, or truncated. Fix server/.env and restart.'
+    )
+  }
 }
 
 logMailEnvOnce()
 
-if (sendGridApiKey) {
+if (sendGridKeyLooksValid(sendGridApiKey)) {
   sgMail.setApiKey(sendGridApiKey)
 }
 
@@ -68,8 +81,10 @@ app.post('/api/contact', async (req, res) => {
     const fromEmail = process.env.SENDGRID_FROM_EMAIL?.trim()
     const mailTo = process.env.MAIL_TO?.trim() || fromEmail
 
-    if (!sendGridApiKey || !fromEmail || !mailTo) {
-      console.error('[mail] missing SENDGRID_API_KEY, SENDGRID_FROM_EMAIL, or MAIL_TO in server/.env')
+    if (!sendGridKeyLooksValid(sendGridApiKey) || !fromEmail || !mailTo) {
+      console.error(
+        '[mail] missing or invalid SENDGRID_API_KEY, or missing SENDGRID_FROM_EMAIL / MAIL_TO in server/.env'
+      )
       return res.status(500).json({ ok: false, error: 'Email is not configured on the server.' })
     }
 
