@@ -5,8 +5,13 @@ import express from 'express'
 import dotenv from 'dotenv'
 import nodemailer from 'nodemailer'
 
-// Prefer IPv4 when resolving smtp.gmail.com (avoids ECONNREFUSED on broken IPv6 routes)
+// Prefer IPv4 when resolving hostnames (many cloud VMs have no usable IPv6 route to Google SMTP).
 dns.setDefaultResultOrder('ipv4first')
+
+/** Force IPv4 for SMTP — avoids ENETUNREACH on smtp.gmail.com IPv6 (2a00:1450:...) on some hosts. */
+function smtpLookupIPv4(hostname, _options, callback) {
+  dns.lookup(hostname, { family: 4 }, callback)
+}
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 dotenv.config({ path: join(__dirname, '.env') })
@@ -41,12 +46,16 @@ function createMailer() {
     console.warn('[mail] SMTP_TLS_INSECURE is enabled — TLS certificate verification is disabled (dev/troubleshooting only).')
   }
 
-  // Explicit host + port 587 (STARTTLS) — works better than implicit :465 when IPv6 or 465 is blocked
+  // Explicit host + port 587 (STARTTLS). `lookup` forces IPv4 so Gmail is reachable when IPv6 is down.
   return nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 587,
     secure: false,
     requireTLS: true,
+    lookup: smtpLookupIPv4,
+    connectionTimeout: 60_000,
+    greetingTimeout: 30_000,
+    socketTimeout: 60_000,
     auth: {
       user,
       pass,
