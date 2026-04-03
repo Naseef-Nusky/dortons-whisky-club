@@ -23,6 +23,16 @@ app.get('/health', (req, res) => {
   res.json({ ok: true })
 })
 
+// One-line diagnostics (no secrets) — check PM2 logs if /api/contact returns 500
+const logMailEnvOnce = () => {
+  const hasUser = Boolean(process.env.GMAIL_USER)
+  const hasPass = Boolean(process.env.GMAIL_APP_PASSWORD)
+  const hasTo = Boolean(process.env.MAIL_TO || process.env.GMAIL_USER)
+  console.log(`[mail] env: GMAIL_USER=${hasUser} GMAIL_APP_PASSWORD=${hasPass} MAIL_TO=${hasTo}`)
+}
+
+logMailEnvOnce()
+
 const escapeHtml = (unsafe = '') =>
   String(unsafe)
     .replace(/&/g, '&amp;')
@@ -79,6 +89,7 @@ app.post('/api/contact', async (req, res) => {
     const transporter = createMailer()
 
     if (!transporter || !mailTo) {
+      console.error('[mail] missing GMAIL_USER, GMAIL_APP_PASSWORD, or MAIL_TO in server/.env')
       return res.status(500).json({ ok: false, error: 'Gmail SMTP is not configured on the server.' })
     }
 
@@ -120,8 +131,10 @@ app.post('/api/contact', async (req, res) => {
 
     return res.json({ ok: true })
   } catch (err) {
-    console.error('Gmail SMTP error:', err)
-    return res.status(500).json({ ok: false, error: 'Failed to send email.' })
+    const code = err?.code || err?.responseCode
+    const msg = err?.message || String(err)
+    console.error('[mail] sendMail failed:', code, msg)
+    return res.status(503).json({ ok: false, error: 'Failed to send email.' })
   }
 })
 
