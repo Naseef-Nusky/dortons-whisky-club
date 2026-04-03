@@ -12,6 +12,21 @@ dist
 dist-ssr
 *.local
 
+# Environment — never commit API keys or secrets
+.env
+.env.*
+!.env.example
+server/.env
+!server/.env.example
+
+# OS
+Thumbs.db
+
+# Optional tooling
+.turbo
+.cache
+coverage
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
