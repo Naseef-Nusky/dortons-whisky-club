@@ -52,6 +52,11 @@ const escapeHtml = (unsafe = '') =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;')
 
+/** Avoid invalid replyTo — SendGrid rejects the whole send if reply-to is malformed. */
+function looksLikeEmail(s) {
+  return typeof s === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim())
+}
+
 app.post('/api/contact', async (req, res) => {
   try {
     const { fullName, email, phone, message } = req.body || {}
@@ -105,8 +110,8 @@ app.post('/api/contact', async (req, res) => {
       text: plainText,
       html,
     }
-    if (em) {
-      msgPayload.replyTo = { email: em }
+    if (em && looksLikeEmail(em)) {
+      msgPayload.replyTo = { email: em.trim() }
     }
 
     await sgMail.send(msgPayload)
@@ -120,7 +125,15 @@ app.post('/api/contact', async (req, res) => {
     console.error('[mail] send failed:', code, body || msg)
     if (status === 401) {
       console.error(
-        '[mail] SendGrid rejected the API key (401). Create a new key at https://app.sendgrid.com/settings/api_keys with "Mail Send" enabled, paste it as SENDGRID_API_KEY in server/.env, and restart the server.'
+        '[mail] SendGrid 401: invalid or revoked API key. Set SENDGRID_API_KEY in server/.env (https://app.sendgrid.com/settings/api_keys) and restart.'
+      )
+    } else if (status === 403) {
+      console.error(
+        '[mail] SendGrid 403: sender not allowed. Verify SENDGRID_FROM_EMAIL in SendGrid → Sender Authentication (single sender or domain DNS).'
+      )
+    } else if (status === 400) {
+      console.error(
+        '[mail] SendGrid 400: bad request — check MAIL_TO / from addresses and SendGrid activity log for details.'
       )
     }
     return res.status(503).json({ ok: false, error: 'Failed to send email.' })
