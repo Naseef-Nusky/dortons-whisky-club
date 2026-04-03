@@ -11,14 +11,14 @@ function Layout() {
 
   useEffect(() => {
     if (location.pathname === '/about') {
-      document.title = 'About Us | Dortons Whisky Partners'
+      document.title = 'About Us | Dortons Whisky Club'
       return
     }
     if (location.pathname === '/contact') {
-      document.title = 'Contact Us | Dortons Whisky Partners'
+      document.title = 'Contact Us | Dortons Whisky Club'
       return
     }
-    document.title = 'Home | Dortons Whisky Partners'
+    document.title = 'Home | Dortons Whisky Club'
   }, [location.pathname])
 
   return (
@@ -59,7 +59,7 @@ function Layout() {
             <div>
               <img src={logoImage} alt="Dortons Whisky Club logo" className="h-11 w-auto brightness-0 invert" />
               <p className="mt-4 max-w-xs text-sm text-slate-300">
-                Dortons Whisky Partners offers premium cask sourcing, insured storage, and long-term investor guidance.
+                Dortons Whisky Club offers premium cask sourcing, insured storage, and long-term investor guidance.
               </p>
               <p className="mt-3 max-w-xs text-sm text-slate-300">
                 A specialist whisky investment team delivering transparent and professional support.

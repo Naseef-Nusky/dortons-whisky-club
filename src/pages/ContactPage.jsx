@@ -9,7 +9,7 @@ const faqs = [
     q: 'Q1: Why choose Dortons Whisky Club?',
     a: [
       'Dortons Whisky Club offers a professional and personalised service that clients can rely on at every stage. Our main goal is to help clients understand the cask whisky market by sharing our expertise, insights, and data-driven analysis.',
-      'We focus on building long-term relationships and strong partnerships with our clients. Using reliable independent market data, we guide clients through selecting and purchasing casks, helping them build well-balanced, diverse portfolios that are both attractive and potentially profitable.',
+      'We focus on building long-term relationships with our clients. Using reliable independent market data, we guide clients through selecting and purchasing casks, helping them build well-balanced, diverse portfolios that are both attractive and potentially profitable.',
     ],
   },
   {
@@ -303,7 +303,7 @@ function ContactPage() {
         <div className="mx-auto grid max-w-6xl gap-8 px-6 md:grid-cols-[1fr_1fr]">
           <img src={scotchImage} alt="Contact specialist" className="h-[320px] w-full object-cover" />
           <article className="self-center">
-            <h2 className="text-3xl font-semibold text-[#171111]">Get in touch with Dortons Whisky Partners</h2>
+            <h2 className="text-3xl font-semibold text-[#171111]">Get in touch with Dortons Whisky Club</h2>
             <p className="mt-3 text-sm leading-7 text-slate-700">
               We offer clear and practical support for first-time and experienced investors. Our team can help you choose casks that fit your strategy and long-term plans.
             </p>
@@ -370,7 +370,7 @@ function ContactPage() {
       <section className="border-y border-[#b79552]/30 bg-[#070505] py-12">
         <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 px-6 md:flex-row md:items-center">
           <p className="max-w-3xl text-xl leading-tight text-white md:text-3xl">
-            Speak with Dortons Whisky Partners today
+            Speak with Dortons Whisky Club today
             <span className="mt-2 block text-lg italic text-slate-200 md:text-xl">and take your first step into whisky investing.</span>
           </p>
           <Link

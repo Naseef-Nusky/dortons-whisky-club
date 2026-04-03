@@ -90,7 +90,7 @@ function HomePage() {
         <div className="mx-auto grid max-w-6xl gap-6 px-6 md:grid-cols-[1.1fr_1fr] md:items-center">
           <img src={irishImage} alt="Independent whisky agency" className="h-[320px] w-full bg-[#0d0b0b] object-contain md:h-full md:min-h-[360px]" />
           <article className="border border-[#b79552]/40 bg-[#151010] p-5">
-            <p className="text-xs uppercase tracking-[0.25em] text-[#d8bc79]">About Dortons Whisky Partners</p>
+            <p className="text-xs uppercase tracking-[0.25em] text-[#d8bc79]">About Dortons Whisky Club</p>
             <h2 className="mt-2 text-2xl font-semibold text-white">London&apos;s Independent Whisky Agency</h2>
             <p className="mt-3 text-sm leading-6 text-slate-300">
               We source and manage premium Scotch and Irish casks for investors seeking stable, long-term growth from a tangible luxury asset.
@@ -121,7 +121,7 @@ function HomePage() {
               Our approach combines proven market performance, careful cask selection, and investor-first guidance so you can build a stronger portfolio with confidence.
             </p>
             <p className="mt-3 text-slate-700">
-              As whisky matures, scarcity increases and quality deepens, creating an attractive long-term dynamic for asset growth.
+              As whisky matures, rarity increases and quality deepens, creating an attractive long-term dynamic for asset growth.
             </p>
           </article>
           <div className="space-y-4">

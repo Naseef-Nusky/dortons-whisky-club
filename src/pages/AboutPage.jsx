@@ -11,8 +11,8 @@ function AboutPage() {
         <img src={irishImage} alt="About hero background" className="h-[520px] w-full object-cover opacity-40" />
         <div className="absolute inset-0 bg-black/35"></div>
         <div className="absolute inset-0 mx-auto flex max-w-6xl flex-col items-center justify-center px-6 text-center">
-          <p className="text-xs uppercase tracking-[0.28em] text-[#d8bc79]">About Dortons Whisky Partners</p>
-          <h1 className="mt-4 text-4xl font-semibold text-white md:text-6xl">Dortons Whisky Partners</h1>
+          <p className="text-xs uppercase tracking-[0.28em] text-[#d8bc79]">About Dortons Whisky Club</p>
+          <h1 className="mt-4 text-4xl font-semibold text-white md:text-6xl">Dortons Whisky Club</h1>
           <p className="mt-3 text-sm text-slate-200">Known for transparent advice and dependable investor support</p>
         </div>
       </section>
@@ -20,10 +20,10 @@ function AboutPage() {
       <section className="border-b border-[#b79552]/30 bg-[#0d0b0b] py-12">
         <div className="mx-auto grid max-w-6xl gap-8 px-6 md:grid-cols-[1fr_1.1fr] md:items-center">
           <article>
-            <p className="text-xs uppercase tracking-[0.25em] text-[#d8bc79]">About Dortons Whisky Partners</p>
+            <p className="text-xs uppercase tracking-[0.25em] text-[#d8bc79]">About Dortons Whisky Club</p>
             <h2 className="mt-2 text-3xl font-semibold text-white">London&apos;s Independent Whisky Agency</h2>
             <p className="mt-4 text-sm leading-7 text-slate-300">
-              At Dortons Whisky Partners, investing in whisky goes beyond buying a product. We help clients secure premium casks from established distilleries in Scotland and Ireland.
+              At Dortons Whisky Club, investing in whisky goes beyond buying a product. We help clients secure premium casks from established distilleries in Scotland and Ireland.
             </p>
             <p className="mt-3 text-sm leading-7 text-slate-300">
               Our specialists combine industry insight with practical guidance, helping you create a tangible portfolio with confidence and a long-term view.
@@ -66,8 +66,8 @@ function AboutPage() {
                   <path d="m10 13 2 2 2-2" />
                 </svg>
               </div>
-              <h4 className="font-semibold text-[#d8bc79]">Premium Partnerships</h4>
-              <p className="mt-2 text-sm text-slate-300">Our partner network gives clients access to high-quality casks from trusted producers.</p>
+              <h4 className="font-semibold text-[#d8bc79]">Trusted distillery networks</h4>
+              <p className="mt-2 text-sm text-slate-300">Our network gives clients access to high-quality casks from trusted producers.</p>
             </article>
           </div>
         </div>
@@ -95,7 +95,7 @@ function AboutPage() {
       <section className="border-y border-[#b79552]/30 bg-[#070505] py-12">
         <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 px-6 md:flex-row md:items-center">
           <p className="max-w-3xl text-xl leading-tight text-white md:text-3xl">
-            Connect with Dortons Whisky Partners today
+            Connect with Dortons Whisky Club today
             <span className="mt-2 block text-lg italic text-slate-200 md:text-xl">to begin your whisky investment journey.</span>
           </p>
           <Link
