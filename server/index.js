@@ -5,13 +5,8 @@ import express from 'express'
 import dotenv from 'dotenv'
 import nodemailer from 'nodemailer'
 
-// Prefer IPv4 when resolving hostnames (many cloud VMs have no usable IPv6 route to Google SMTP).
+// Prefer IPv4 for any other lookups in the process.
 dns.setDefaultResultOrder('ipv4first')
-
-/** Force IPv4 for SMTP — avoids ENETUNREACH on smtp.gmail.com IPv6 (2a00:1450:...) on some hosts. */
-function smtpLookupIPv4(hostname, _options, callback) {
-  dns.lookup(hostname, { family: 4 }, callback)
-}
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 dotenv.config({ path: join(__dirname, '.env') })
@@ -41,11 +36,22 @@ const escapeHtml = (unsafe = '') =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;')
 
-function createMailer() {
+async function createMailer() {
   const user = process.env.GMAIL_USER
   const pass = process.env.GMAIL_APP_PASSWORD
 
   if (!user || !pass) {
+    return null
+  }
+
+  // Connect by IPv4 literal — avoids ENETUNREACH when Node/nodemailer still picks Gmail IPv6 (2a00:1450:...).
+  let smtpHost
+  try {
+    const { address } = await dns.promises.lookup('smtp.gmail.com', { family: 4 })
+    smtpHost = address
+    console.log('[mail] smtp.gmail.com resolved to IPv4:', smtpHost)
+  } catch (e) {
+    console.error('[mail] IPv4 DNS lookup for smtp.gmail.com failed:', e?.message || e)
     return null
   }
 
@@ -56,13 +62,11 @@ function createMailer() {
     console.warn('[mail] SMTP_TLS_INSECURE is enabled — TLS certificate verification is disabled (dev/troubleshooting only).')
   }
 
-  // Explicit host + port 587 (STARTTLS). `lookup` forces IPv4 so Gmail is reachable when IPv6 is down.
   return nodemailer.createTransport({
-    host: 'smtp.gmail.com',
+    host: smtpHost,
     port: 587,
     secure: false,
     requireTLS: true,
-    lookup: smtpLookupIPv4,
     connectionTimeout: 60_000,
     greetingTimeout: 30_000,
     socketTimeout: 60_000,
@@ -71,6 +75,8 @@ function createMailer() {
       pass,
     },
     tls: {
+      // Required when connecting by IP — cert is issued for smtp.gmail.com
+      servername: 'smtp.gmail.com',
       minVersion: 'TLSv1.2',
       ...(tlsInsecure ? { rejectUnauthorized: false } : {}),
     },
@@ -86,7 +92,7 @@ app.post('/api/contact', async (req, res) => {
     const msg = String(message ?? '').trim()
 
     const mailTo = process.env.MAIL_TO || process.env.GMAIL_USER
-    const transporter = createMailer()
+    const transporter = await createMailer()
 
     if (!transporter || !mailTo) {
       console.error('[mail] missing GMAIL_USER, GMAIL_APP_PASSWORD, or MAIL_TO in server/.env')
